@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 Robert Sardinia
+ * Copyright (c) 2016 Robert Sardinia, ChrisWF
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,19 +50,29 @@ function makeApiRequest($url)
  * @param $url
  * @return mixed|null
  */
-function makeCrestRequest($path)
+function makeCrestRequest($path, $token="")
 {
     $url = "https://crest-tq.eveonline.com" . $path;
     // Initialize a new request for this URL
     $ch = curl_init($url);
     // Set the options for this request
-    curl_setopt_array($ch, array(
-        CURLOPT_FOLLOWLOCATION => true, // Yes, we want to follow a redirect
-        CURLOPT_RETURNTRANSFER => true, // Yes, we want that curl_exec returns the fetched data
-        CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
-        CURLOPT_TIMEOUT => 15,
-        CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)"
-    ));
+    if(token == "")
+        curl_setopt_array($ch, array(
+            CURLOPT_FOLLOWLOCATION => true, // Yes, we want to follow a redirect
+            CURLOPT_RETURNTRANSFER => true, // Yes, we want that curl_exec returns the fetched data
+            CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)"
+        ));
+    else
+        curl_setopt_array($ch, array(
+                CURLOPT_FOLLOWLOCATION => true, // Yes, we want to follow a redirect
+                CURLOPT_RETURNTRANSFER => true, // Yes, we want that curl_exec returns the fetched data
+                CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
+                CURLOPT_TIMEOUT => 15,
+                CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)",
+                CURLOPT_HTTPHEADER => array("Authorization: Bearer $token")
+            ));
     // Fetch the data from the URL
     $data = curl_exec($ch);
     // Close the connection
