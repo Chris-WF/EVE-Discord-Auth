@@ -61,7 +61,7 @@ function makeCrestRequest($path)
         CURLOPT_RETURNTRANSFER => true, // Yes, we want that curl_exec returns the fetched data
         CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
         CURLOPT_TIMEOUT => 15,
-        CURLOPT_USERAGENT => "Eve-Discord-Bot/fork (eve_crest@chriswf.de)"
+        CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)"
     ));
     // Fetch the data from the URL
     $data = curl_exec($ch);
