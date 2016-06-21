@@ -19,18 +19,32 @@ foreach(glob(BASEDIR . "/libraries/*.php") as $lib)
 
 // Routes
 $app->get("/", function() use ($app, $config) {
-    $inviteCode = "ic_" . $app->request->get("inviteCode");
-    $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData&state=$inviteCode"));
+    $state = new stdClass();
+    $state->mode = "";
+    $state->inviteCode = $app->request->get("inviteCode");
+    $state->fleetId = $app->request->get("fleetId");
+    $base64State = base64_encode(json_encode($state));
+    $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData&state=$base64State"));
 });
 
-$app->get("/manage/", function() use ($app, $config) {
-    $inviteCode = "ic_" . $app->request->get("inviteCode");
-    $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData&state=$inviteCode"));
+$app->get("/publish/", function() use ($app, $config) {
+    $state = new stdClass();
+    $state->mode = "publish";
+    $state->fleetId = $app->request->get("fleetId");
+    $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData+fleetRead+fleetWrite+characterLocationRead&state=$base64State"));
+});
+
+$app->get("/close/", function() use ($app, $config) {
+    $state = new stdClass();
+    $state->mode = "close";
+    $state->fleetId = $app->request->get("fleetId");
+    $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData+fleetRead+fleetWrite+characterLocationRead&state=$base64State"));
 });
 
 $app->get("/auth/", function() use ($app, $config) {s
     $code = $app->request->get("code");
-    $state = $app->request->get("state");
+    $base64State = $app->request->get("state");
+    $state = json_decode(base64_decode($base64State));
 
     $tokenURL = "https://login.eveonline.com/oauth/token";
     $base64 = base64_encode($config["sso"]["clientID"] . ":" . $config["sso"]["secretKey"]);
@@ -52,12 +66,37 @@ $app->get("/auth/", function() use ($app, $config) {s
     $corporationID = $characterData->result->corporationID;
     $allianceID = $characterData->result->allianceID;
 
-    $
+    if($state->mode == "publish")
+    {
+        $crestResult = makeCrestRequest("/fleets/$state->fleetId/", $accessToken);
+        if($crestResult != false)
+        {
+            $inviteCode = uniqid();
+            insertInviteCode($config["db"]["url"], $config["db"]["user"], $config["db"]["pass"], $config["db"]["dbname"],
+                $state->fleetId, $inviteCode, $accessToken);
+        }
+    
+        $app->render("authedManage.twig", array("inviteLink" => $inviteLink, "authString" => $authString));
+    }
+    else if($state->mode == "close")
+    {
+        $crestResult = makeCrestRequest("/fleets/$state->fleetId/", $accessToken);
+        if($crestResult != false)
+        {
+            deleteInviteCode($config["db"]["url"], $config["db"]["user"], $config["db"]["pass"], $config["db"]["dbname"], 
+                $state->fleetId);
+        }
+    
+        $app->render("authedManage.twig", array("inviteLink" => $inviteLink, "authString" => $authString));
+    }
+    else
+    {
+        
+        $app->render("authed.twig", array("inviteLink" => $inviteLink, "authString" => $authString));
+    }
 
     // Generate an auth string
-    $authString = uniqid();
 
-    $app->render("authed.twig", array("inviteLink" => $inviteLink, "authString" => $authString));
 });
 
 $app->run();
