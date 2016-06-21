@@ -75,10 +75,16 @@ function makeCrestRequest($path, $token="")
             ));
     // Fetch the data from the URL
     $data = curl_exec($ch);
+    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     // Close the connection
     curl_close($ch);
-    // Return a new SimpleXMLElement based upon the received data
-    return json_decode($data);
+    if($httpcode >= 400)
+    {
+        return false;
+    } else {
+        // Return a new object based upon the received data
+        return json_decode($data);
+    }
 }
 
 /**
