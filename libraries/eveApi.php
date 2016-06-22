@@ -50,29 +50,28 @@ function makeApiRequest($url)
  * @param $url
  * @return mixed|null
  */
-function makeCrestRequest($path, $token="")
+function makeCrestRequest($path, $token=false, $method="GET", $data=false)
 {
     $url = "https://crest-tq.eveonline.com" . $path;
     // Initialize a new request for this URL
     $ch = curl_init($url);
     // Set the options for this request
-    if(token == "")
-        curl_setopt_array($ch, array(
-            CURLOPT_FOLLOWLOCATION => true, // Yes, we want to follow a redirect
-            CURLOPT_RETURNTRANSFER => true, // Yes, we want that curl_exec returns the fetched data
-            CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)"
-        ));
-    else
-        curl_setopt_array($ch, array(
-                CURLOPT_FOLLOWLOCATION => true, // Yes, we want to follow a redirect
-                CURLOPT_RETURNTRANSFER => true, // Yes, we want that curl_exec returns the fetched data
-                CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
-                CURLOPT_TIMEOUT => 15,
-                CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)",
-                CURLOPT_HTTPHEADER => array("Authorization: Bearer $token")
-            ));
+    curl_setopt_array($ch, array(
+        CURLOPT_FOLLOWLOCATION => true, // Yes, we want to follow a redirect
+        CURLOPT_RETURNTRANSFER => true, // Yes, we want that curl_exec returns the fetched data
+        CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)"
+    ));
+    if($token != false)
+       curl_setopt($ch, CURLOPT_HTTPHEADER, array("Authorization: Bearer $token"));
+    if($method != "GET")
+       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    if($method == "POST")
+       curl_setopt($ch, CURLOPT_POST, true);
+    if($data != false)
+       curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    
     // Fetch the data from the URL
     $data = curl_exec($ch);
     $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

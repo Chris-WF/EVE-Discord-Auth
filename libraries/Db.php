@@ -29,3 +29,27 @@ function deleteInviteCode($db, $user, $pass, $dbName, $fleetId)
     }
     return null;
 }
+
+function getAccessToken($db, $user, $pass, $dbName, $fleetId, $inviteCode)
+{
+    $conn = new mysqli($db, $user, $pass, $dbName);
+    $retToken = false;
+    
+    if ($stmt = $conn->prepare("SELECT token FROM openFleetInvites WHERE fleetId= ? AND inviteCode= ?")) {
+        // Bind the variables to the parameter as strings.
+        $stmt->bind_param("ss", $fleetId, $inviteCode);
+        // Execute the statement.
+        if($result = $stmt->query())
+        {
+           if($result->num_rows > 0)
+           {
+              $row = mysqli_fetch_array($result);
+              $retToken = $row[0];
+           }
+           $result->close();
+        }
+      $stmt->close();
+    }
+    return $retToken;
+}
+

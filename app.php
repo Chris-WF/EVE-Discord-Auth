@@ -27,21 +27,43 @@ $app->get("/", function() use ($app, $config) {
     $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData&state=$base64State"));
 });
 
+$app->get("/manage/", function() use ($app, $config) {
+    if($app->request->get("fleetId"))
+    {
+       $state = new stdClass();
+       $state->fleetId = $app->request->get("fleetId");
+       if($app->request->get("submit_publish"))
+         $state->mode = "publish";
+       else if ($app->request->get("submit_close"))
+         $state->mode = "close";
+       
+       $base64State = base64_encode(json_encode($state));
+       $app->render("authManage.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData+fleetRead+fleetWrite+characterLocationRead&state=$base64State"));
+    }
+    else
+    {
+      $app->render("manage.twig", array());
+    }
+});
+
 $app->get("/publish/", function() use ($app, $config) {
     $state = new stdClass();
     $state->mode = "publish";
     $state->fleetId = $app->request->get("fleetId");
-    $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData+fleetRead+fleetWrite+characterLocationRead&state=$base64State"));
+    $base64State = base64_encode(json_encode($state));
+    $app->render("authManage.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData+fleetRead+fleetWrite+characterLocationRead&state=$base64State"));
 });
 
 $app->get("/close/", function() use ($app, $config) {
     $state = new stdClass();
     $state->mode = "close";
     $state->fleetId = $app->request->get("fleetId");
-    $app->render("index.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData+fleetRead+fleetWrite+characterLocationRead&state=$base64State"));
+    $base64State = base64_encode(json_encode($state));
+    $app->render("authManage.twig", array("crestURL" => "https://login.eveonline.com/oauth/authorize?response_type=code&redirect_uri=" . $config['sso']['callbackURL'] . "&client_id=" . $config['sso']['clientID'] . "&scope=publicData+fleetRead+fleetWrite+characterLocationRead&state=$base64State"));
 });
 
-$app->get("/auth/", function() use ($app, $config) {s
+$app->get("/auth/", function() use ($app, $config) {
+    $crestRoot = "https://crest-tq.eveonline.com";
     $code = $app->request->get("code");
     $base64State = $app->request->get("state");
     $state = json_decode(base64_decode($base64State));
@@ -76,7 +98,9 @@ $app->get("/auth/", function() use ($app, $config) {s
                 $state->fleetId, $inviteCode, $accessToken);
         }
     
-        $app->render("authedManage.twig", array("inviteLink" => $inviteLink, "authString" => $authString));
+        $app->render("authedAndPublished.twig", 
+           array("inviteLink" => "/?inviteCode=$inviteCode&fleetId=$state->fleetId",
+           "closeLink" => "/close/?fleetId=$state->fleetId"));
     }
     else if($state->mode == "close")
     {
@@ -84,15 +108,19 @@ $app->get("/auth/", function() use ($app, $config) {s
         if($crestResult != false)
         {
             deleteInviteCode($config["db"]["url"], $config["db"]["user"], $config["db"]["pass"], $config["db"]["dbname"], 
-                $state->fleetId);
+                $state->fleetId);                
         }
     
-        $app->render("authedManage.twig", array("inviteLink" => $inviteLink, "authString" => $authString));
+        $app->render("authedAndClosed.twig", array("fleetId" => $state->fleetId));
     }
     else
     {
+        $bossToken = getAccessToken($config["db"]["url"], $config["db"]["user"], $config["db"]["pass"], $config["db"]["dbname"], 
+                $state->fleetId, $state->inviteCode);  
+        $crestResult = makeCrestRequest("/fleets/$state->fleetId/", $bossToken, "POST", 
+           "character:{href:`$crestRoot/characters/$characterID/`}, role:\"squadMember\"");
         
-        $app->render("authed.twig", array("inviteLink" => $inviteLink, "authString" => $authString));
+        $app->render("authed.twig", array("crestResult" => $crestResult));
     }
 
     // Generate an auth string

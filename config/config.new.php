@@ -15,10 +15,6 @@ $config["db"] = array(
     "dbname" => ""
 );
 
-$config["discord"] = array(
-    "inviteLink" => "" //Make sure it's set to never expire and set to a public channel.
-);
-
 // Site IGNORE EVERYTHING BELOW THIS LINE
 $config["site"] = array(
     "debug" => true,
@@ -40,19 +36,5 @@ $config["slim"] = array(
     "debug" => $config["site"]["debug"],
     "cookies.secret_key" => $config["cookies"]["secret"],
     "templates.path" => BASEDIR . "/view/",
-);
-
-
-
-// IGNORE THIS SECTION FOR NOW!!!
-$config["groups"] = array(
-    "Blues" => array(
-        //"alliance" => 1234, // an alliance with the id 1234
-        //"corporation" => 1234, // a corporation with the id 1234
-        //"character" => 1234 // a character with the id 1234
-    ),
-    "Black Serpent Technologies" => array(
-        "corporation" => "1234" // Example
-    )
 );
 
