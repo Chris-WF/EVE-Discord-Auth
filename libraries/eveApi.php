@@ -50,7 +50,7 @@ function makeApiRequest($url)
  * @param $url
  * @return mixed|null
  */
-function makeCrestRequest($path, $token=false, $method="GET", $data=false)
+function makeCrestRequest($path, $token=false, $method="GET", $requestData=false)
 {
     $url = "https://crest-tq.eveonline.com" . $path;
     // Initialize a new request for this URL
@@ -62,15 +62,20 @@ function makeCrestRequest($path, $token=false, $method="GET", $data=false)
         CURLOPT_SSL_VERIFYPEER => false, // Do not verify the SSL certificate
         CURLOPT_TIMEOUT => 15,
         CURLOPT_USERAGENT => "Eve-Fleet-Linkup (eve_crest@chriswf.de)"
-    ));
-    if($token != false)
-       curl_setopt($ch, CURLOPT_HTTPHEADER, array("Authorization: Bearer $token"));
+    ));     
     if($method != "GET")
        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    if($method == "POST")
-       curl_setopt($ch, CURLOPT_POST, true);
-    if($data != false)
-       curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    if($requestData != false)
+       curl_setopt($ch, CURLOPT_POSTFIELDS, $requestData);
+        
+    $headerData = [];  
+    if($token != false)
+       $headerData[] = "Authorization: Bearer $token";
+    if($method != "GET")
+       $headerData[] = "Content-Type: */*";
+    $headerData[] = "Accept: */*";
+    if(count($headerData) > 0)
+       curl_setopt($ch, CURLOPT_HTTPHEADER, $headerData);    
     
     // Fetch the data from the URL
     $data = curl_exec($ch);
@@ -78,12 +83,14 @@ function makeCrestRequest($path, $token=false, $method="GET", $data=false)
     // Close the connection
     curl_close($ch);
     if($httpcode >= 400)
-    {
-        return false;
+    {    
+        error_log("HTTP code $httpcode for request to $url");
+        error_log("Path: $path, Token: $token, Method: $method, Request Data: $requestData");
+        error_log("Response Data: $data");
     } else {
-        // Return a new object based upon the received data
-        return json_decode($data);
     }
+     // Return a new object based upon the received data
+     return json_decode($data);
 }
 
 /**
