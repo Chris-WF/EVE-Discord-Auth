@@ -82,12 +82,19 @@ function makeCrestRequest($path, $token=false, $method="GET", $requestData=false
     $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     // Close the connection
     curl_close($ch);
-    if($httpcode >= 400)
+    if(!$httpcode || $httpcode >= 400)
     {    
         error_log("HTTP code $httpcode for request to $url");
         error_log("Path: $path, Token: $token, Method: $method, Request Data: $requestData");
         error_log("Response Data: $data");
     } else {
+       if($config["site"]["debug"])
+       {
+          error_log("HTTP code $httpcode for request to $url");
+          error_log("Path: $path, Token: $token, Method: $method, Request Data: $requestData");
+          error_log("Response Data: $data");
+       }
+          
     }
      // Return a new object based upon the received data
      return json_decode($data);

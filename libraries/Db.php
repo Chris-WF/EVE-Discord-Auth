@@ -117,7 +117,7 @@ function updateAccessToken($db, $user, $pass, $dbName, $fleetId, $inviteCode, $a
         // Bind the variables to the parameter as strings.
         $stmt->bind_param("sss", $accessToken, $fleetId, $inviteCode);
         // Execute the statement.
-        if( $stmt->execute() 
+        if( $stmt->execute() )
           $success = true;
         $stmt->close();
     }

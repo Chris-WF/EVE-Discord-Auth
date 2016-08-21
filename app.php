@@ -141,6 +141,7 @@ $app->get("/auth/", function() use ($app, $config) {
            "application/vnd.ccp.eve.FleetMemberInvite-v1+json");
         
         if($crestResult->exceptionType)
+        {
            if($crestResult->key == "authNeeded")
            {
               $bossRefreshToken = getRefreshToken($config["db"]["url"], $config["db"]["user"], $config["db"]["pass"], $config["db"]["dbname"], 
